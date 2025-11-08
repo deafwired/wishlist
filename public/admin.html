@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Admin - Add Item</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1>Admin: Add Item</h1>
+            <nav>
+                <a class="button-link" href="/">View Wishlist</a>
+            </nav>
+        </header>
+
+        <!-- Login form (enter owner password once) -->
+        <form id="loginForm" class="admin-form">
+            <label>Owner Password<br>
+                <input type="password" id="loginPassword" required>
+            </label>
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- Add form: hidden until login succeeds -->
+        <form id="addForm" class="admin-form" style="display:none;">
+            <label>Title<br>
+                <input type="text" id="title" required>
+            </label>
+            <br>
+            <label>Description<br>
+                <textarea id="description"></textarea>
+            </label>
+            <br>
+            <label>Link<br>
+                <input type="url" id="link">
+            </label>
+            <br>
+            <label>Image URL<br>
+                <input type="url" id="image">
+            </label>
+            <br>
+            <div id="dropzone" style="margin-top:8px; padding:12px; border:2px dashed #ccc; text-align:center;">
+                Drag & drop an image here, paste (Ctrl+V) an image, or
+                <button type="button" id="chooseFile">Choose file</button>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+                <div id="preview" style="margin-top:8px;"></div>
+            </div>
+            <br>
+            <label>Price<br>
+                <input type="text" id="price">
+            </label>
+            <br>
+            <button type="submit">Add Item</button>
+            <button type="button" id="logout">Logout</button>
+        </form>
+
+        <div id="result" style="margin-top:12px"></div>
+    </div>
+
+    <script src="/admin_script.js"></script>
+</body>
+
+</html>

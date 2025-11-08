@@ -1,0 +1,7 @@
+node_modules/
+public/uploads/*.png
+public/uploads/*.jpg
+public/uploads/*.jpeg
+public/uploads/*.gif
+db.sqlite
+.env

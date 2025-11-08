@@ -1,0 +1,154 @@
+import express from "express";
+import dotenv from "dotenv";
+dotenv.config();
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
+import bodyParser from "body-parser";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import multer from "multer";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+const uploadDir = path.join(__dirname, "public", "uploads");
+try {
+  fs.mkdirSync(uploadDir, { recursive: true });
+} catch (e) {
+  console.error("Could not create upload dir:", e);
+}
+
+// Multer setup for image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const safeName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    cb(null, safeName);
+  }
+});
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    // allow only images
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image uploads allowed'));
+    cb(null, true);
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+// Database setup
+const dbPromise = open({
+  filename: path.join(__dirname, "db.sqlite"),
+  driver: sqlite3.Database
+});
+
+(async () => {
+  const db = await dbPromise;
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      link TEXT,
+      image TEXT,
+      price TEXT,
+      status TEXT DEFAULT 'available'
+    );
+  `);
+})();
+
+// Routes
+app.get("/api/items", async (req, res) => {
+  const db = await dbPromise;
+  const items = await db.all("SELECT * FROM wishlist");
+  res.json(items);
+});
+
+app.post("/api/claim/:id", async (req, res) => {
+  const db = await dbPromise;
+  const { id } = req.params;
+  await db.run("UPDATE wishlist SET status = 'claimed' WHERE id = ?", id);
+  res.json({ success: true });
+});
+
+app.post("/api/purchase/:id", async (req, res) => {
+  const db = await dbPromise;
+  const { id } = req.params;
+  await db.run("UPDATE wishlist SET status = 'purchased' WHERE id = ?", id);
+  res.json({ success: true });
+});
+
+app.get("/", (_, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/admin", (_, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+app.post("/api/admin/add", async (req, res) => {
+  const { password, title, description, link, image, price } = req.body || {};
+
+  if (!process.env.OWNER_PASSWORD) {
+    return res.status(500).json({ error: "Server not configured: OWNER_PASSWORD not set" });
+  }
+
+  if (password !== process.env.OWNER_PASSWORD) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  if (!title) {
+    return res.status(400).json({ error: "Title is required" });
+  }
+
+  try {
+    const db = await dbPromise;
+    await db.run(
+      "INSERT INTO wishlist (title, description, link, image, price) VALUES (?, ?, ?, ?, ?)",
+      [title, description, link, image, price]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error adding item:", err);
+    res.status(500).json({ error: "Failed to add item" });
+  }
+});
+
+app.post("/api/admin/auth", (req, res) => {
+  const { password } = req.body || {};
+  if (!process.env.OWNER_PASSWORD) {
+    return res.status(500).json({ error: "Server not configured: OWNER_PASSWORD not set" });
+  }
+  if (password !== process.env.OWNER_PASSWORD) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/upload', upload.single('image'), (req, res) => {
+  const { password } = req.body || {};
+  if (!process.env.OWNER_PASSWORD) {
+    return res.status(500).json({ error: 'Server not configured: OWNER_PASSWORD not set' });
+  }
+  if (password !== process.env.OWNER_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  // Return the public URL for the uploaded file
+  const publicUrl = `/uploads/${req.file.filename}`;
+  res.json({ url: publicUrl });
+});
+
+app.listen(port, () => {
+  console.log(`Wishlist app running on http://localhost:${port}`);
+});
