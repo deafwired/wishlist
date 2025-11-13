@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import multer from "multer";
+import cookieParser from "cookie-parser";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -16,6 +17,7 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cookieParser());
 
 const uploadDir = path.join(__dirname, "public", "uploads");
 try {
@@ -58,9 +60,16 @@ const dbPromise = open({
       link TEXT,
       image TEXT,
       price TEXT,
-      status TEXT DEFAULT 'available'
+      status TEXT DEFAULT 'available',
+      claimer TEXT
     );
   `);
+  // Ensure existing databases get the 'claimer' column if missing
+  try {
+    await db.exec("ALTER TABLE wishlist ADD COLUMN claimer TEXT;");
+  } catch (e) {
+    // ignore if column already exists or other errors
+  }
 })();
 
 // Routes
@@ -73,16 +82,33 @@ app.get("/api/items", async (req, res) => {
 app.post("/api/claim/:id", async (req, res) => {
   const db = await dbPromise;
   const { id } = req.params;
-  await db.run("UPDATE wishlist SET status = 'claimed' WHERE id = ?", id);
-  res.json({ success: true });
+
+  // read claimer token from cookie
+  const token = req.cookies && req.cookies.claimer;
+  if (!token) return res.status(400).json({ error: 'No claimer cookie present' });
+
+  const item = await db.get("SELECT * FROM wishlist WHERE id = ?", id);
+  if (!item) return res.status(404).json({ error: 'Item not found' });
+
+  if (item.status === 'available' || !item.status) {
+    await db.run("UPDATE wishlist SET status = 'claimed', claimer = ? WHERE id = ?", [token, id]);
+    return res.json({ success: true, claimed: true });
+  }
+
+  if (item.status === 'claimed') {
+    if (item.claimer === token) {
+      // allow unclaim by same claimer
+      await db.run("UPDATE wishlist SET status = 'available', claimer = NULL WHERE id = ?", id);
+      return res.json({ success: true, claimed: false });
+    }
+    return res.status(403).json({ error: 'Item already claimed by someone else' });
+  }
+
+  // default fallback
+  res.status(400).json({ error: 'Cannot claim this item' });
 });
 
-app.post("/api/purchase/:id", async (req, res) => {
-  const db = await dbPromise;
-  const { id } = req.params;
-  await db.run("UPDATE wishlist SET status = 'purchased' WHERE id = ?", id);
-  res.json({ success: true });
-});
+/* purchase feature removed; users can only claim/unclaim items via cookies */
 
 app.get("/", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
