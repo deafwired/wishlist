@@ -12,7 +12,7 @@ import cookieParser from "cookie-parser";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3456;
 
 // Middleware
 app.use(bodyParser.json());

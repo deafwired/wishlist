@@ -3,5 +3,6 @@ public/uploads/*.png
 public/uploads/*.jpg
 public/uploads/*.jpeg
 public/uploads/*.gif
+public/uploads/*.webp
 db.sqlite
 .env

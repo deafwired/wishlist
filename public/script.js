@@ -28,13 +28,13 @@ async function loadItems() {
 
     // Build markup for a nicer card
     const imgSrc = item.image || '';
-    const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${item.title}">` : `<div style="height:160px; background:#f3f4f6; border-radius:6px; display:flex;align-items:center;justify-content:center;color:#9ca3af">No image</div>`;
+    const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${item.title}">` : `<div class="no-image">No image</div>`;
 
     const linkHtml = item.link ? `<a class="button" href="${item.link}" target="_blank" rel="noopener">View</a>` : '';
 
-    const priceHtml = item.price ? `<div class="muted"><strong>${item.price}</strong></div>` : '';
+    const priceHtml = item.price ? `<div class="muted"><strong>$${item.price}</strong></div>` : '';
 
-    let statusBadgeText = `Status: ${item.status}`;
+    let statusBadgeText = item.status;
     if (item.status === 'claimed') {
       if (item.claimer === claimerToken) statusBadgeText = 'Claimed by you';
       else statusBadgeText = 'Claimed';
@@ -61,8 +61,8 @@ async function loadItems() {
       <h2>${item.title}</h2>
       <p>${item.description || ''}</p>
       ${priceHtml}
-      <div style="display:flex; gap:8px; align-items:center; margin-top:8px">${linkHtml}${statusBadge}</div>
-      ${actions}
+      <div style="display:flex; gap:8px; align-items:center; margin-top:8px">${linkHtml}${actions}${statusBadge}</div>
+      
     `;
 
     list.appendChild(div);
