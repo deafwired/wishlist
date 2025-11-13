@@ -48,8 +48,16 @@ header.app-header a.button-link {
 
 #wishlist {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* default to single column (mobile-first). Larger screens will switch to multi-column below */
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+/* On wider screens use a responsive multi-column layout */
+@media (min-width: 640px) {
+  #wishlist {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
 }
 
 .wish {
@@ -62,7 +70,7 @@ header.app-header a.button-link {
   height: 100%;
 }
 
-.card-content{
+.card-content {
   /* allow the middle content to grow so footer stays pinned to bottom */
   flex: 1 1 auto;
   display: flex;
@@ -97,17 +105,24 @@ header.app-header a.button-link {
   margin-top: 0;
 }
 
-.card-footer{
+.card-footer {
   margin-top: auto;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-top:12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
 }
 
-.footer-left{display:flex; gap:8px; align-items:center}
-.footer-right{white-space:nowrap}
+.footer-left {
+  display: flex;
+  gap: 8px;
+  align-items: center
+}
+
+.footer-right {
+  white-space: nowrap
+}
 
 button,
 .button {
@@ -184,4 +199,3 @@ button.secondary {
 .muted {
   color: var(--muted)
 }
-
