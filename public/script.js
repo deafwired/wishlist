@@ -30,7 +30,7 @@ async function loadItems() {
     const imgSrc = item.image || '';
     const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${item.title}">` : `<div class="no-image">No image</div>`;
 
-    const linkHtml = item.link ? `<a class="button" href="${item.link}" target="_blank" rel="noopener">View</a>` : '';
+    const linkHtml = item.link ? `href="${item.link}" target="_blank" rel="noopener"` : '';
 
     const priceHtml = item.price ? `<div class="muted"><strong>$${item.price}</strong></div>` : '';
 
@@ -57,12 +57,12 @@ async function loadItems() {
     }
 
     div.innerHTML = `
+      <a ${linkHtml}></a>
       ${imgHtml}
       <h2>${item.title}</h2>
       <p>${item.description || ''}</p>
       ${priceHtml}
-      <div style="display:flex; gap:8px; align-items:center; margin-top:8px">${linkHtml}${actions}${statusBadge}</div>
-      
+      <div style="display:flex; gap:8px; align-items:center; margin-top:8px">${actions}${statusBadge}</div>
     `;
 
     list.appendChild(div);
